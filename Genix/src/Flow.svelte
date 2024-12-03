@@ -11,33 +11,47 @@
       ConnectionLineType,
       MiniMap,
       Controls,
-
-
-    } from '@xyflow/svelte';
+      } from '@xyflow/svelte';
    
+    
     import '@xyflow/svelte/dist/style.css';
 
     import CustomNode from './Custom/CustomNode.svelte'
+    import Person from './types/Person.svelte'
+    import NodeData from './types/NodeData.svelte'
 
     const snapGrid: [number, number] = [25, 25];
 
     const nodeTypes = {
         customNode : CustomNode
     }
-   
+
+   const base:Person = {
+      name:'Nome',
+      dateOfBirth:Date(),
+      age:undefined,
+      gender:'male',
+      ailments:[],
+      deceased:false
+    }
+
     const initialNodes: Node[] = [
       {
         id: '0',
         type: 'customNode',
-        data: { label: 'Node' },
+        data: { person:base },
         position: { x: 0, y: 0 },
-        origin : [0.5,0.5]
+        origin : [0.5,0.5],
       }
     ];
-   
+
     const nodes = writable<Node[]>(initialNodes);
     const edges = writable<Edge[]>([]);
-   
+    const dataArray = writable<NodeData[]>( [{ 
+                              id:initialNodes[0].id,
+                              position:initialNodes[0].position,
+                              person:base}])
+
     let rect: DOMRectReadOnly;
     let id = 1;
     const getId = () => `${id++}`;
@@ -63,7 +77,7 @@
       const newNode: Node = {
         id,
         type:'customNode',
-        data: { label: `Node ${id}` },
+        data: { person:base },
         // project the screen coordinates to pane coordinates
         position: screenToFlowPosition({
           x: clientX,
@@ -91,6 +105,16 @@
         });
       $nodes = $nodes;
       $edges = $edges;
+      $dataArray.push({
+		  id: newNode.id,
+		  position: newNode.position,
+		  connections: $edges[parseInt(newNode.id) - 1].id,
+		  person: base,
+	  })
+      $dataArray=$dataArray
+      
+      console.log($dataArray)
+      console.log($nodes)
     };
   </script>
    
@@ -107,8 +131,8 @@
       onconnectstart={handleConnectStart}
       connectionLineType={ConnectionLineType.SmoothStep}
       defaultEdgeOptions={{ type: 'smoothstep'}}
-      minZoom={1}
-      maxZoom={10}
+      minZoom={0.5}
+      maxZoom={5}
       
     >
         <Controls />
