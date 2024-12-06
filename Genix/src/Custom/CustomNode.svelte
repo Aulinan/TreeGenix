@@ -5,17 +5,27 @@
    
     type $$Props = NodeProps;
     export let isConnectable: $$Props['isConnectable'];
-    export let data: Record<string,Person>;
+    export let data;
 
+    const {index}:number = data
     const {person}:Record<string,unknown> = data
+    const {spouse}:Array<string> = data
 
     console.log(person)
   
   </script>
   
-  <div class={`customNode ${person.gender}`}>
+  <div 
+    class='customNode'
+    class:male={person.gender==='male'}
+    class:female={person.gender==='female'}>
       <span>{person.name}</span>
-  <Handle type='source' position={Position.Right} id='right'  style="background: #555;" {isConnectable} />
+    <Handle
+      type='source' 
+      position={Position.Right} 
+      id='right'  
+      style="background: #555;" 
+      {isConnectable} />
     <Handle
       type="target"
       position={Position.Left}
@@ -24,28 +34,22 @@
       {isConnectable}
     />
     <Handle
-      type="target"
-      position={Position.Top}
-      id="top"
-      style="background: #555;"
-      {isConnectable}
-    />
-    <Handle
-    type="source"
-    position={Position.Bottom}
-    id="bottom"
+    type="target"
+    position={Position.Top}
+    id="top"
     style="background: #555;"
     {isConnectable}
-    />
+  />
+
   </div>
 
    
   <style>
-    
+
     .customNode {
       background: #eee;
-      height: 100px;
-      width: 100px;
+      height: 80px;
+      width: 80px;
       justify-content: center;
       align-items: center;
       display: flex;
