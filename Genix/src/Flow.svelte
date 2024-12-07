@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
     import {
       SvelteFlow,
       useSvelteFlow,
@@ -17,14 +16,15 @@
     
     import '@xyflow/svelte/dist/style.css';
 
-    import getCenterBetweenNodes from './Custom/getCenterBetweenNodes.svelte';
-    import createNode from './Custom/createNode.svelte';
+    import getCenterBetweenNodes from './lib/getCenterBetweenNodes.svelte';
+    import createNode from '$lib/createNode.svelte';
 
     import CustomNode from './Custom/CustomNode.svelte'
     import MiddleNode from './Custom/middleNode.svelte';
     import Person from './types/Person.svelte'
-    import NodeData from './types/NodeData.svelte'
-	import createEdge from './Custom/createEdge.svelte';
+	  import createEdge from './lib/createEdge.svelte';
+    import {nodes,edges,trueNodes,nodesForEdge} from './shared.svelte';
+    import initializeApp from '$lib/initializeApp.svelte';
 
     /*------------------------------initial declarations----------------------------------*/
 
@@ -35,45 +35,19 @@
         middleNode : MiddleNode
     }
 
-
-   const base:Person = {
-      name:'Nome',
-      dateOfBirth:Date(),
-      age:undefined,
-      gender:'male',
-      ailments:[],
-      deceased:false
-    }
-
-    const initialNodes: Node[] = [
-      {
-        id: '0',
-        type: 'customNode',
-        data: { index:0,person:base,spouse:[]},
-        position: { x: 0, y: 0 },
-        origin : [0.5,0.5],
-      }
-    ];
-
-    const nodes = writable<Node[]>();
-    const trueNodes = writable<Node[]>(initialNodes);
-    const nodesForEdge = writable<Node[]>([]);
-    const edges = writable<Edge[]>([]);
-    const dataArray = writable<NodeData[]>( [{ 
-                              id:initialNodes[0].id,
-                              position:initialNodes[0].position,
-                              person:base}])
-
     let rect: DOMRectReadOnly;
     let id = 1;
     let indexMiddleNode= 0;
     const getId = () => `${id++}`;
     const getindexMiddleNode = () => `${indexMiddleNode++}`
+    let edge:boolean = false
    
     const { screenToFlowPosition } = useSvelteFlow();
- /*-----------------------------------------end declarations----------------------------------*/
 
-    $nodes=$trueNodes
+    initializeApp();
+
+
+ /*-----------------------------------------end declarations----------------------------------*/
 
     const onChangedPosition = (event:CustomEvent) => {
       if (event.detail.targetNode.type === 'middleNode') return;
@@ -90,11 +64,12 @@
   
 
     const handleConnectStart: OnConnectStart = (event,params)=> {
-   
-
+      edge=true
+      console.log(event)
     }
    
     const handleConnectEnd: OnConnectEnd = (event, connectionState) => {
+      edge=false
 
       if (connectionState.isValid) return;
 
@@ -104,47 +79,60 @@
         const sourceOrTarget:string = connectionState.fromHandle?.type ?? 'source'
         const { clientX, clientY } = 'changedTouches' in event ? event.changedTouches[0] : event;
         const nodePosition:XYPosition = screenToFlowPosition({x:clientX,y:clientY})
+        console.log(indexMiddleNode)
 
 
-        if (connectionState.fromHandle?.id === 'right'|| connectionState.fromHandle?.id === 'left') {
+        if (initiatingHandleId === 'right'|| initiatingHandleId=== 'left') {
           const indexMiddleNode = getindexMiddleNode()
 
+
           $trueNodes[parseInt(initiatingNodeId)].data.spouse.push(indexMiddleNode) //updateSpouse
-          const newNode = createNode('customNode',nodePosition,base,id,Array(indexMiddleNode))
-          $trueNodes.push(newNode);
+          $trueNodes.push(createNode('customNode',nodePosition,id,Array(indexMiddleNode)))
           $edges.push(createEdge(sourceOrTarget,initiatingNodeId,id,initiatingHandleId))
 
-          const middleNode = createNode('middleNode',getCenterBetweenNodes(nodePosition,$nodes[parseInt(initiatingNodeId)].position),undefined,'',Array(initiatingNodeId,id))
-          $nodesForEdge.push(middleNode)
-          $nodesForEdge = $nodesForEdge;
-
-          $dataArray.push({
-          id: newNode.id,
-          position: newNode.position,
-          connections: $edges[parseInt(newNode.id)-1].id,
-          person: base,})
+          $nodesForEdge.push(createNode('middleNode',getCenterBetweenNodes(nodePosition,$nodes[parseInt(initiatingNodeId)].position),undefined,Array(initiatingNodeId,id)))
 
           $nodes=$trueNodes.concat($nodesForEdge)
           $edges = $edges;
-          return;}
+          return;
+        }
+        if (initiatingHandleId === 'top'){
+          const indexMiddleNode = getindexMiddleNode()
+          const id = getId();
+          console.log(id)
+          const previousId = (parseInt(id)-1).toString()
+          $trueNodes.push(createNode('customNode',{x:nodePosition.x+80,y:nodePosition.y},previousId,Array(indexMiddleNode)))
+        
+          $trueNodes.push(createNode('customNode',{x:nodePosition.x-80,y:nodePosition.y},id,Array(indexMiddleNode)))
+          $edges.push(createEdge(sourceOrTarget,initiatingNodeId,`Node ${previousId}--${id}`,initiatingHandleId))
 
-        const newNode =createNode('customNode',nodePosition,base,id,[])
-        $trueNodes.push(newNode);
-        $edges.push(createEdge(sourceOrTarget,initiatingNodeId,id,initiatingHandleId))
-        $dataArray.push({
-        id: newNode.id,
-        position: newNode.position,
-        connections: $edges[parseInt(newNode.id)-1].id,
-        person: base,
-      })
+          $edges.push(createEdge(sourceOrTarget,previousId,id,'left'))
+          $nodesForEdge.push(createNode('middleNode',nodePosition,undefined,Array(previousId,id,initiatingNodeId)))
+
+          $nodes=$trueNodes.concat($nodesForEdge)
+          $edges = $edges;
+          return;
+        }
+        const newNode = createNode('customNode',nodePosition,id,[])
+        $trueNodes.push(newNode)
         $nodes=$trueNodes.concat($nodesForEdge)
+        $edges.push(createEdge(sourceOrTarget,initiatingNodeId,id,initiatingHandleId))
+
         $edges = $edges;
     } 
 
-  </script>
+  
+
+	function onClickedNode(e: CustomEvent<{ node: Node<Record<string, unknown>, string>; event: MouseEvent | TouchEvent; }>): void {
+    console.log('open')
+    document.getElementsById("sidenav").style.width = "250px";
+	}
+</script>
    
-   
+  <svelte:window {onkeydown} {onmousemove}/>
   <div class="wrapper" bind:contentRect={rect}>
+  <div id= 'sidenav' class='sidenav'/>
+
     <SvelteFlow
       {nodes}
       {edges}
@@ -156,7 +144,7 @@
       connectionLineType={ConnectionLineType.Step}
       defaultEdgeOptions={{ type: 'smoothstep'}}
       on:nodedrag={onChangedPosition}
-     
+      on:nodeclick={onClickedNode}
       minZoom={0.5}
       maxZoom={5}
       
@@ -166,6 +154,7 @@
       <Background />
     </SvelteFlow>
   </div>
+  
    
   <style>
    
@@ -188,5 +177,18 @@
     :global(.svelte-flow__handle:hover) {
       opacity: 1;
       pointer-events: all;
+    }
+
+    :global(.sidenav) {
+      height: 100%; /* 100% Full-height */
+      width: 0; /* 0 width - change this with JavaScript */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Stay on top */
+      top: 0; /* Stay at the top */
+      left: 0;
+      background-color: #111; /* Black*/
+      overflow-x: hidden; /* Disable horizontal scroll */
+      padding-top: 60px; /* Place content 60px from the top */
+      transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
     }
   </style>
