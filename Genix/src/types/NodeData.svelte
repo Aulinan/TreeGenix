@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import Person from './Person.svelte';
+    import {type Person} from './Person';
 
     export type NodeData = {
         id:string;

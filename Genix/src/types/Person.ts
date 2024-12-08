@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+
 	export type Person = Readonly<Partial<{
     name:string;
     dateOfBirth:Date;
@@ -9,4 +9,3 @@
     }>>
     type Gender = 'male'|'female'
 
-</script>

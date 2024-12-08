@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Handle, Position, type NodeProps } from '@xyflow/svelte';
-    import Person from '../types/Person.svelte'
+    import type {Person} from '../types/Person.'
 
    
     type $$Props = NodeProps;
