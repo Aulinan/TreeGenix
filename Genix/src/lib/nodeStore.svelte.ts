@@ -45,7 +45,7 @@ const addNode = (newNode: Node): void => trueNodes.update(oldNodes => [...oldNod
 const addMiddleNode = (newMiddleNode: Node): void => middleNodes.update(oldMiddleNodes => [...oldMiddleNodes, newMiddleNode])
 
 export const createSpouseNode = (startingNode: Node, spouseNodePosition: XYPosition, handleType: string): void => {
-  const spouseNode = createNode('customNode', spouseNodePosition);
+  const spouseNode = createNode('customNode', spouseNodePosition,[],startingNode.data.person.gender ==='male'? {...BASE_PERSON,gender:'female'}:BASE_PERSON);
   createMiddleNode(startingNode, spouseNode)
 
   const newEdge: Edge = {
@@ -74,7 +74,7 @@ export const createChildNode = (middleNodeId:string,nodePosition:XYPosition):voi
 
 export const createParentsNode = (startingNodeId:string,pointerPosition:XYPosition):void =>{
   const fatherNode = createNode('customNode',{x:pointerPosition.x-80,y:pointerPosition.y})
-  const motherNode = createNode('customNode',{x:pointerPosition.x+80,y:pointerPosition.y})
+  const motherNode = createNode('customNode',{x:pointerPosition.x+80,y:pointerPosition.y},[],{...BASE_PERSON,gender:'female'})
 
   const newEdgeParents: Edge = {
     id: `${fatherNode.id}--${motherNode.id}`,
@@ -110,7 +110,7 @@ const createMiddleNode = (startingNode: Node, spouseNode: Node): Node => {
   return middleNode
 }
 
-const createNode = (type: keyof NodeTypes, position: XYPosition = { x: 0, y: 0 }, spouses: ReadonlyArray<string> = [], person: Person = BASE_PERSON): Node => {
+const createNode = (type: keyof NodeTypes, position: XYPosition = { x: 0, y: 0 },spouses: ReadonlyArray<string> = [], person: Person = BASE_PERSON): Node => {
   const isMiddleNode = type === 'middleNode';
   const id = (isMiddleNode ? getindexMiddleNode : getId)()
 
@@ -119,10 +119,20 @@ const createNode = (type: keyof NodeTypes, position: XYPosition = { x: 0, y: 0 }
     type,
     position,
     origin: [0.5, 0.5],
-    data: { person, spouses }
+    data: {label:person.name, person:{...person}, spouses:[...spouses] }
   };
 
   (isMiddleNode ? addMiddleNode : addNode)(newNode)
 
   return newNode
+}
+
+export const updateNodes = (nodeName:string,node:Node) => {
+  if (node===undefined) return;
+  const id = parseInt(node.id)
+  node.data={...node.data,label:nodeName}
+
+
+  trueNodes.set([node])
+  console.log(get(trueNodes))
 }

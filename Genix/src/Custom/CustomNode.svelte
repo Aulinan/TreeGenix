@@ -1,25 +1,33 @@
 <script lang="ts">
     import { Handle, Position, type NodeProps } from '@xyflow/svelte';
-    import type {Person} from '../types/Person.'
 
    
     type $$Props = NodeProps;
     export let isConnectable: $$Props['isConnectable'];
     export let data;
+    let colors = ["#FF0000", "#00FF00", "#0000FF"]
+    
 
-    const {index}:number = data
+    const {label}:Record<string,unknown> = data
     const {person}:Record<string,unknown> = data
-    const {spouse}:Array<string> = data
 
-    console.log(person)
+
+    function getGradient(ailments: string[], colors: string[]): string {
+        if (ailments.length < 1) return '#eee 0%, #eee 100%'
+        const step = 100 / ailments.length; // Percentuale per ogni colore
+        return ailments
+            .map((_, i) => `${colors[i]} ${i * step}%, ${colors[i]} ${(i + 1) * step}%`)
+            .join(", ");
+    }
   
   </script>
   
   <div 
     class='customNode'
     class:male={person.gender==='male'}
-    class:female={person.gender==='female'}>
-      <span>{person.name}</span>
+    class:female={person.gender==='female'}
+    style="--colors: {getGradient(person.ailments, colors)}">
+    <span>{label}</span>
     <Handle
       type='source' 
       position={Position.Right} 
@@ -47,12 +55,15 @@
   <style>
 
     .customNode {
-      background: #eee;
       height: 80px;
       width: 80px;
       justify-content: center;
       align-items: center;
       display: flex;
+      background: conic-gradient(
+            from 0deg,
+            var(--colors)
+        );
     }
       .male {
     border-radius: 0.125rem;
